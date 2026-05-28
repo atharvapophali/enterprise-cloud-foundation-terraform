@@ -1,253 +1,150 @@
-Enterprise Cloud Foundation using Terraform, AWS, OPA, and GitHub Actions
+# Enterprise Cloud Foundation
 
-# Project Overview
+A modular Terraform repository that demonstrates enterprise-style AWS infrastructure using Infrastructure as Code, environment separation, policy-as-code governance, and secure remote state management.
 
-This project demonstrates the implementation of an enterprise-style cloud infrastructure platform using Infrastructure as Code (IaC) principles with Terraform on AWS.
+## Project Overview
 
-The infrastructure includes:
+This repository is organized for clarity, reuse, and DevSecOps alignment.
 
-Networking resources
-Compute infrastructure
-Storage services
-Managed database deployment
-Remote Terraform state management
-Policy-as-Code governance using OPA
-CI/CD automation using GitHub Actions
+Key responsibilities:
+- Build AWS network, compute, storage, and managed database resources using reusable Terraform modules
+- Keep environment-specific configuration separate under `environments/`
+- Store Terraform state remotely with S3 and DynamoDB locking
+- Enforce infrastructure security rules with Open Policy Agent (OPA)
+- Prepare the repo for GitHub Actions-based CI/CD validation
 
-The goal of this project is to simulate a real-world DevOps/Cloud Engineering environment using modular, reusable, and production-style Terraform architecture.
+## System Architecture
 
+```mermaid
+flowchart TD
+    A[GitHub Actions / CI Pipeline] --> B[Terraform Validation & Plan]
+    B --> C[Environment Configurations]
+    B --> D[Reusable Modules]
+    D --> D1[modules/network]
+    D --> D2[modules/compute]
+    D --> D3[modules/storage]
+    D --> D4[modules/database]
+    B --> E[Remote State Backend]
+    E --> E1[S3 Bucket]
+    E --> E2[DynamoDB Lock Table]
+    B --> F[OPA Policy Validation]
+    F --> F1[policies/ec2_policy.rego]
+    C --> G[environments/dev]
+    C --> H[environments/staging]
+    C --> I[environments/prod]
+    D2 --> J[EC2 Instances]
+    D3 --> K[S3 Buckets]
+    D4 --> L[RDS PostgreSQL]
+```
 
-# Technologies Used
+## Project Structure
 
-| Technology              | Purpose                     |
-| ----------------------- | --------------------------- |
-| Terraform               | Infrastructure as Code      |
-| AWS                     | Cloud Platform              |
-| GitHub Actions          | CI/CD Pipeline              |
-| Open Policy Agent (OPA) | Policy-as-Code              |
-| Amazon EC2              | Compute Resources           |
-| Amazon S3               | Storage + Terraform Backend |
-| Amazon RDS PostgreSQL   | Managed Database            |
-| DynamoDB                | Terraform State Locking     |
-
-# Project Architecture
-
-GitHub Actions
-       ↓
-Terraform CI Pipeline
-       ↓
-Terraform Modules
-       ↓
-AWS Infrastructure
-│
-├── VPC
-│   ├── Public Subnets
-│   ├── Private Subnets
-│   ├── Route Tables
-│   └── Internet Gateway
-│
-├── EC2 Instance
-│
-├── S3 Bucket
-│
-├── PostgreSQL RDS
-│
-└── Remote Terraform Backend
-    ├── S3 State Storage
-    └── DynamoDB Locking
-
-
-# Project Structure
-
+```text
 enterprise-cloud-foundation-terraform/
-│
+├── environments/
+│   ├── dev/
+│   ├── staging/
+│   └── prod/
 ├── modules/
 │   ├── network/
 │   ├── compute/
 │   ├── storage/
 │   └── database/
-│
-├── environments/
-│   └── dev/
-│
 ├── policies/
-│   ├── ec2_policy.rego
-│   └── security_policy.rego
-│
-├── .github/
-│   └── workflows/
-│       └── terraform-ci.yml
-│
+│   └── ec2_policy.rego
+├── scripts/
 ├── README.md
 └── .gitignore
+```
 
+## Technologies Used
 
-# Features Implemented
+| Technology              | Purpose                                |
+| ----------------------- | -------------------------------------- |
+| Terraform               | Infrastructure as Code                 |
+| AWS                     | Cloud provider                         |
+| Open Policy Agent (OPA) | Policy-as-Code validation              |
+| Amazon EC2              | Compute resources                      |
+| Amazon S3               | Storage and Terraform backend          |
+| Amazon RDS PostgreSQL   | Managed database service               |
+| DynamoDB                | Terraform state locking                |
 
-**Networking**
-    Custom VPC creation
-    Public and private subnets
-    Internet Gateway
-    Route Tables
-    Route Table Associations
+## Security Recommendations
 
-**Compute****
-    EC2 deployment
-    Security Group configuration
-    SSH access support
+1. Least-Privilege Access
+   - Use IAM roles and policies scoped to Terraform and application requirements.
+   - Avoid using AWS root account for provisioning.
 
-**Storage****
-    S3 Bucket deployment
-    Database
-    PostgreSQL RDS deployment
-    DB subnet groups
-    Database security groups
+2. Secure Remote State
+   - Store Terraform state in an encrypted S3 bucket.
+   - Enable DynamoDB state locking to prevent concurrent state writes.
 
-**Terraform Best Practices**
-    Modular architecture
-    Variables and outputs
-    Reusable modules
-    Remote state configuration
+3. Network Segmentation
+   - Keep public and private subnets separate.
+   - Use route tables and subnet groups to isolate resources.
 
-**Remote State Management**
-    S3 backend for Terraform state
-    DynamoDB state locking
+4. Access Control
+   - Restrict Security Group rules to only required ports and sources.
+   - Limit SSH access using CIDR restrictions or bastion hosts.
 
-**Policy-as-Code**
-    OPA governance policies
-    EC2 instance type restrictions
-    Security validations
+5. Policy-as-Code Enforcement
+   - Run OPA policies against Terraform plan output before apply.
+   - Keep policy files versioned in `policies/`.
 
-**CI/CD**
-    GitHub Actions workflow
-    Terraform validation pipeline
-    Automated policy checks
+6. Secrets Management
+   - Store AWS credentials and other secrets in GitHub Secrets or AWS Secrets Manager.
+   - Do not hardcode sensitive values in Terraform files.
 
-# AWS Resources Created
+7. CI/CD Validation Gates
+   - Validate formatting with `terraform fmt`.
+   - Validate configuration with `terraform validate`.
+   - Use plan review and policy checks before apply.
 
-| Resource Type | Resources                  |
-| ------------- | -------------------------- |
-| Networking    | VPC, Subnets, Route Tables |
-| Compute       | EC2 Instance               |
-| Security      | Security Groups            |
-| Storage       | S3 Bucket                  |
-| Database      | PostgreSQL RDS             |
-| Backend       | S3 + DynamoDB              |
+8. Monitoring and Auditing
+   - Enable AWS logging and monitoring for deployed resources.
+   - Audit Terraform plan changes to catch drift and unexpected modifications.
 
-# Prerequisites
-
-Before running this project, install:
-    Terraform
-    AWS CLI
-    Git
-    OPA
-    VS Code (recommended)
-
-# AWS Configuration
-
-Configure AWS CLI: aws configure
-
-Provide:
-    AWS Access Key ID
-    AWS Secret Access Key
-    Region: ap-south-1
-    Output format: json
-
-# Terraform Backend Configuration
-
-Terraform remote backend uses:
-
-Amazon S3 for state storage
-DynamoDB for state locking
-
-Example backend:
-
-terraform {
-  backend "s3" {
-    bucket         = "your-terraform-state-bucket"
-    key            = "dev/terraform.tfstate"
-    region         = "ap-south-1"
-    dynamodb_table = "terraform-state-lock"
-    encrypt        = true
-  }
-}
-
-# Deployment Instructions
+## Deployment Workflow
 
 1. Initialize Terraform
-terraform init
-2. Format Terraform Files
-terraform fmt
-3. Validate Configuration
-terraform validate
-4. Generate Execution Plan
-terraform plan
-5. Deploy Infrastructure
-terraform apply
+   ```bash
+   terraform init
+   ```
+2. Format source files
+   ```bash
+   terraform fmt
+   ```
+3. Validate configuration
+   ```bash
+   terraform validate
+   ```
+4. Create a plan
+   ```bash
+   terraform plan
+   ```
+5. Apply changes
+   ```bash
+   terraform apply
+   ```
 
+## OPA Policy Validation
 
-# OPA Policy Validation
+Generate a Terraform JSON plan and validate it with OPA:
 
-Generate Terraform plan JSON:
-
+```bash
 terraform plan -out="tfplan.binary"
 terraform show -json tfplan.binary > tfplan.json
+opa eval --input tfplan.json --data policies/ec2_policy.rego "data.terraform.policies.deny"
+```
 
-Run OPA validation:
+## Notes
 
-opa eval --input tfplan.json --data ../../policies/ec2_policy.rego "data.terraform.policies.deny"
+- Keep environment-specific variables and backend configuration isolated under `environments/*`.
+- Maintain reusable Terraform modules inside `modules/`.
+- Store policy rules in `policies/` and update them as governance needs evolve.
 
-
-# GitHub Actions CI/CD
-
-The CI/CD pipeline automatically performs:
-
-    Terraform initialization
-    Terraform formatting checks
-    Terraform validation
-    Terraform planning
-    OPA policy validation
-
-Workflow file:
-.github/workflows/terraform-ci.yml
-
-
-# Security Considerations
-
-IAM users used instead of root account
-Terraform state stored remotely
-DynamoDB locking enabled
-Sensitive credentials stored in GitHub Secrets
-Security groups restricted for controlled access
-OPA policies enforce infrastructure governance
-
-# Future Enhancements
-
-Potential improvements:
-    NAT Gateway integration
-    Multi-environment deployment
-    Terraform workspaces
-    AWS Secrets Manager integration
-    CloudWatch monitoring
-    Kubernetes/EKS deployment
-    Automated Terraform Apply pipeline
-
-# Key Learning Outcomes
-
-This project demonstrates practical experience in:
-
-    Infrastructure as Code
-    Cloud networking
-    AWS resource provisioning
-    Terraform modular design
-    Remote state management
-    DevSecOps practices
-    Policy-as-Code implementation
-    CI/CD automation
-
-
-# Author
+## Author
 Atharva Pophali
 
-# License
+## License
 This project is intended for educational and portfolio purposes.
